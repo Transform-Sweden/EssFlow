@@ -2224,6 +2224,28 @@ Rezept
 
 <script>
 
+// ONE-TIME DATA MIGRATION
+// GitHub Pages serves every repository of the same account from the same
+// address (name.github.io), and browsers share saved data per address — so
+// the English/Swedish app and this German app were writing into the same
+// storage. This app now uses its own "essflow..." keys. On first start, the
+// existing "foodflow..." data is copied over ONCE so nothing is lost; after
+// that, the two apps no longer affect each other.
+(function migrateFromFoodflowStorage(){
+    try{
+        if(localStorage.getItem("essflowMigrated")) return;
+        Object.keys(localStorage).forEach(function(oldKey){
+            if(oldKey.indexOf("foodflow") !== 0) return;
+            var newKey = "essflow" + oldKey.slice("foodflow".length);
+            if(localStorage.getItem(newKey) === null){
+                localStorage.setItem(newKey, localStorage.getItem(oldKey));
+            }
+        });
+        localStorage.setItem("essflowMigrated", "1");
+    }catch(e){}
+})();
+
+
 
 const days = [
     "Monday",
@@ -3628,7 +3650,7 @@ document.addEventListener("keydown", function(e){
 
 
 let recipes = JSON.parse(
-localStorage.getItem("foodflowRecipes")
+localStorage.getItem("essflowRecipes")
 ) || [];
 
 // Convert old ingredient format to new format
@@ -3661,7 +3683,7 @@ recipes = recipes.map(recipe => {
 
 
 localStorage.setItem(
-"foodflowRecipes",
+"essflowRecipes",
 JSON.stringify(recipes)
 );    
 
@@ -3681,7 +3703,7 @@ favorite: recipe.favorite || false
 
 
 localStorage.setItem(
-"foodflowRecipes",
+"essflowRecipes",
 JSON.stringify(recipes)
 );  
 
@@ -3697,14 +3719,14 @@ let plannerRecipeIndex = null;
 // staples like salt or sugar the person already has). This one
 // stays global — it applies no matter which week you're viewing.
 let shoppingRemoved = JSON.parse(
-    localStorage.getItem("foodflowShoppingRemoved")
+    localStorage.getItem("essflowShoppingRemoved")
 ) || {};
 
 
 // Load old FoodFlow v0.1 data
 function migrateOldData(){
 
-    let old = localStorage.getItem("foodflowMeals");
+    let old = localStorage.getItem("essflowMeals");
 
     if(!old) return;
 
@@ -3733,7 +3755,7 @@ function migrateOldData(){
 
 
     localStorage.setItem(
-        "foodflowMeals",
+        "essflowMeals",
         JSON.stringify(data)
     );
 
@@ -3851,7 +3873,7 @@ function ensureWeek(weekKey){
 
 
 let weeks = JSON.parse(
-    localStorage.getItem("foodflowWeeks")
+    localStorage.getItem("essflowWeeks")
 ) || null;
 
 let currentWeekKey = getMondayKey(new Date());
@@ -3861,7 +3883,7 @@ if(weeks === null){
     // First time using multi-week planning — bring the existing
     // single repeating plan across as "this week's" plan.
     let oldMeals = JSON.parse(
-        localStorage.getItem("foodflowMeals")
+        localStorage.getItem("essflowMeals")
     ) || null;
 
     weeks = {};
@@ -3870,7 +3892,7 @@ if(weeks === null){
         weeks[currentWeekKey] = oldMeals;
     }
 
-    localStorage.setItem("foodflowWeeks", JSON.stringify(weeks));
+    localStorage.setItem("essflowWeeks", JSON.stringify(weeks));
 
 }
 
@@ -3930,7 +3952,7 @@ if(weeks === null){
 
     if(changed){
 
-        localStorage.setItem("foodflowWeeks", JSON.stringify(weeks));
+        localStorage.setItem("essflowWeeks", JSON.stringify(weeks));
 
     }
 
@@ -3948,23 +3970,23 @@ let meals = ensureWeek(currentWeekKey);
 // week's list is showing, so ticking off "milk" this week doesn't
 // wrongly show it as already done next week too.
 let shoppingCheckedByWeek = JSON.parse(
-    localStorage.getItem("foodflowShoppingCheckedByWeek")
+    localStorage.getItem("essflowShoppingCheckedByWeek")
 ) || null;
 
 let shoppingOverridesByWeek = JSON.parse(
-    localStorage.getItem("foodflowShoppingOverridesByWeek")
+    localStorage.getItem("essflowShoppingOverridesByWeek")
 ) || null;
 
 let shoppingExtrasByWeek = JSON.parse(
-    localStorage.getItem("foodflowShoppingExtrasByWeek")
+    localStorage.getItem("essflowShoppingExtrasByWeek")
 ) || null;
 
 // The date range currently being shopped for — a plain start/end
 // date, independent of the week you happen to be viewing in the
 // planner, so it can span across a week boundary (e.g. Wednesday
 // this week through Wednesday next week).
-let shoppingRangeStart = localStorage.getItem("foodflowShoppingRangeStart");
-let shoppingRangeEnd = localStorage.getItem("foodflowShoppingRangeEnd");
+let shoppingRangeStart = localStorage.getItem("essflowShoppingRangeStart");
+let shoppingRangeEnd = localStorage.getItem("essflowShoppingRangeEnd");
 
 if(!shoppingRangeStart || !shoppingRangeEnd){
 
@@ -3981,7 +4003,7 @@ if(shoppingCheckedByWeek === null){
     shoppingCheckedByWeek = {};
 
     let oldChecked = JSON.parse(
-        localStorage.getItem("foodflowShoppingChecked")
+        localStorage.getItem("essflowShoppingChecked")
     );
 
     if(oldChecked){
@@ -3989,7 +4011,7 @@ if(shoppingCheckedByWeek === null){
     }
 
     localStorage.setItem(
-        "foodflowShoppingCheckedByWeek",
+        "essflowShoppingCheckedByWeek",
         JSON.stringify(shoppingCheckedByWeek)
     );
 
@@ -4000,7 +4022,7 @@ if(shoppingOverridesByWeek === null){
     shoppingOverridesByWeek = {};
 
     let oldOverrides = JSON.parse(
-        localStorage.getItem("foodflowShoppingOverrides")
+        localStorage.getItem("essflowShoppingOverrides")
     );
 
     if(oldOverrides){
@@ -4008,7 +4030,7 @@ if(shoppingOverridesByWeek === null){
     }
 
     localStorage.setItem(
-        "foodflowShoppingOverridesByWeek",
+        "essflowShoppingOverridesByWeek",
         JSON.stringify(shoppingOverridesByWeek)
     );
 
@@ -4019,7 +4041,7 @@ if(shoppingExtrasByWeek === null){
     shoppingExtrasByWeek = {};
 
     let oldExtras = JSON.parse(
-        localStorage.getItem("foodflowShoppingExtras")
+        localStorage.getItem("essflowShoppingExtras")
     );
 
     if(oldExtras){
@@ -4027,7 +4049,7 @@ if(shoppingExtrasByWeek === null){
     }
 
     localStorage.setItem(
-        "foodflowShoppingExtrasByWeek",
+        "essflowShoppingExtrasByWeek",
         JSON.stringify(shoppingExtrasByWeek)
     );
 
@@ -4088,21 +4110,21 @@ function repairMisalignedWeekKeyedObject(container, isArrayValued){
 
 if(repairMisalignedWeekKeyedObject(shoppingCheckedByWeek, false)){
     localStorage.setItem(
-        "foodflowShoppingCheckedByWeek",
+        "essflowShoppingCheckedByWeek",
         JSON.stringify(shoppingCheckedByWeek)
     );
 }
 
 if(repairMisalignedWeekKeyedObject(shoppingOverridesByWeek, false)){
     localStorage.setItem(
-        "foodflowShoppingOverridesByWeek",
+        "essflowShoppingOverridesByWeek",
         JSON.stringify(shoppingOverridesByWeek)
     );
 }
 
 if(repairMisalignedWeekKeyedObject(shoppingExtrasByWeek, true)){
     localStorage.setItem(
-        "foodflowShoppingExtrasByWeek",
+        "essflowShoppingExtrasByWeek",
         JSON.stringify(shoppingExtrasByWeek)
     );
 }
@@ -4155,27 +4177,27 @@ function saveShoppingState(){
     shoppingExtrasByWeek[currentWeekKey] = shoppingExtras;
 
     localStorage.setItem(
-        "foodflowShoppingCheckedByWeek",
+        "essflowShoppingCheckedByWeek",
         JSON.stringify(shoppingCheckedByWeek)
     );
 
     localStorage.setItem(
-        "foodflowShoppingOverridesByWeek",
+        "essflowShoppingOverridesByWeek",
         JSON.stringify(shoppingOverridesByWeek)
     );
 
     localStorage.setItem(
-        "foodflowShoppingExtrasByWeek",
+        "essflowShoppingExtrasByWeek",
         JSON.stringify(shoppingExtrasByWeek)
     );
 
     localStorage.setItem(
-        "foodflowShoppingRemoved",
+        "essflowShoppingRemoved",
         JSON.stringify(shoppingRemoved)
     );
 
-    localStorage.setItem("foodflowShoppingRangeStart", shoppingRangeStart);
-    localStorage.setItem("foodflowShoppingRangeEnd", shoppingRangeEnd);
+    localStorage.setItem("essflowShoppingRangeStart", shoppingRangeStart);
+    localStorage.setItem("essflowShoppingRangeEnd", shoppingRangeEnd);
 
 }
 
@@ -4342,7 +4364,7 @@ async function confirmCopyWeek(){
 // Meal type categories — the built-in four, plus any custom ones
 // added through Settings -> Manage Categories.
 let mealCategories = JSON.parse(
-    localStorage.getItem("foodflowCategories")
+    localStorage.getItem("essflowCategories")
 ) || ["🍳 Frühstück","🥗 Mittagessen","🍝 Abendessen","☕ Kaffeepause"];
 
 
@@ -4449,7 +4471,7 @@ function loadDayNotes(){
 
     try{
 
-        let saved = localStorage.getItem("foodflowDayNotes");
+        let saved = localStorage.getItem("essflowDayNotes");
 
         return saved ? JSON.parse(saved) : {};
 
@@ -4464,7 +4486,7 @@ function loadDayNotes(){
 function saveDayNotes(){
 
     localStorage.setItem(
-        "foodflowDayNotes",
+        "essflowDayNotes",
         JSON.stringify(dayNotes)
     );
 
@@ -5018,7 +5040,7 @@ function saveData(){
 
 localStorage.setItem(
 
-"foodflowWeeks",
+"essflowWeeks",
 
 JSON.stringify(weeks)
 
@@ -5043,7 +5065,7 @@ document.body.classList.toggle("dark");
 
 localStorage.setItem(
 
-"foodflowTheme",
+"essflowTheme",
 
 document.body.classList.contains("dark")
 
@@ -5058,7 +5080,7 @@ document.body.classList.contains("dark")
 
 function applyTheme(){
 
-    let mode = localStorage.getItem("foodflowTheme") || "auto";
+    let mode = localStorage.getItem("essflowTheme") || "auto";
 
     let shouldBeDark;
 
@@ -5082,7 +5104,7 @@ if(window.matchMedia){
     window.matchMedia("(prefers-color-scheme: dark)")
         .addEventListener("change", ()=>{
 
-            if((localStorage.getItem("foodflowTheme") || "auto") === "auto"){
+            if((localStorage.getItem("essflowTheme") || "auto") === "auto"){
                 applyTheme();
             }
 
@@ -5121,7 +5143,7 @@ document.getElementById("settingsModal")
 
 function setTheme(mode){
 
-    localStorage.setItem("foodflowTheme", mode);
+    localStorage.setItem("essflowTheme", mode);
 
     applyTheme();
 
@@ -5137,7 +5159,7 @@ function changeLanguage(lang){
 currentLanguage = lang;
 
 localStorage.setItem(
-"foodflowLanguage",
+"essflowLanguage",
 lang
 );
 
@@ -5160,21 +5182,21 @@ showToast(t("language_changed"));
 // Every localStorage key FoodFlow uses, gathered into one file so it
 // can be saved elsewhere or moved to a different device/browser.
 const foodflowStorageKeys = [
-    "foodflowWeeks",
-    "foodflowRecipes",
-    "foodflowTheme",
-    "foodflowLanguage",
-    "foodflowPage",
-    "foodflowCategories",
-    "foodflowShoppingCheckedByWeek",
-    "foodflowShoppingRemoved",
-    "foodflowShoppingOverridesByWeek",
-    "foodflowShoppingExtrasByWeek",
-    "foodflowShoppingRangeStart",
-    "foodflowShoppingRangeEnd",
-    "foodflowCategoryOrder",
-    "foodflowCustomIngredientTranslations",
-    "foodflowDayNotes"
+    "essflowWeeks",
+    "essflowRecipes",
+    "essflowTheme",
+    "essflowLanguage",
+    "essflowPage",
+    "essflowCategories",
+    "essflowShoppingCheckedByWeek",
+    "essflowShoppingRemoved",
+    "essflowShoppingOverridesByWeek",
+    "essflowShoppingExtrasByWeek",
+    "essflowShoppingRangeStart",
+    "essflowShoppingRangeEnd",
+    "essflowCategoryOrder",
+    "essflowCustomIngredientTranslations",
+    "essflowDayNotes"
 ];
 
 
@@ -5246,8 +5268,12 @@ async function importData(event){
 
             foodflowStorageKeys.forEach(key=>{
 
-                if(data[key] !== null && data[key] !== undefined){
-                    localStorage.setItem(key, data[key]);
+                let value = (data[key] !== null && data[key] !== undefined)
+                    ? data[key]
+                    : data[key.replace(/^essflow/, "foodflow")];
+
+                if(value !== null && value !== undefined){
+                    localStorage.setItem(key, value);
                 }
 
             });
@@ -5330,7 +5356,7 @@ async function deleteCategory(index){
     mealCategories.splice(index, 1);
 
     localStorage.setItem(
-        "foodflowCategories",
+        "essflowCategories",
         JSON.stringify(mealCategories)
     );
 
@@ -5394,7 +5420,7 @@ if(mealCategories.includes(newCategory)){
 mealCategories.push(newCategory);
 
 localStorage.setItem(
-    "foodflowCategories",
+    "essflowCategories",
     JSON.stringify(mealCategories)
 );
 
@@ -5541,7 +5567,7 @@ recipes[selectedRecipe].favorite
 
 
 localStorage.setItem(
-"foodflowRecipes",
+"essflowRecipes",
 JSON.stringify(recipes)
 );
 
@@ -5975,7 +6001,7 @@ let copy = {
 recipes.splice(index + 1, 0, copy);
 
 localStorage.setItem(
-    "foodflowRecipes",
+    "essflowRecipes",
     JSON.stringify(recipes)
 );
 
@@ -5993,7 +6019,7 @@ let removedRecipe = recipes[index];
 recipes.splice(index,1);
 
 localStorage.setItem(
-"foodflowRecipes",
+"essflowRecipes",
 JSON.stringify(recipes)
 );
 
@@ -6006,7 +6032,7 @@ showToast(`${t("toast_removed")} "${removedRecipe.name}"`, {
         recipes.push(removedRecipe);
 
         localStorage.setItem(
-            "foodflowRecipes",
+            "essflowRecipes",
             JSON.stringify(recipes)
         );
 
@@ -6154,7 +6180,7 @@ recipes[index].expanded =
 !recipes[index].expanded;
 
 localStorage.setItem(
-"foodflowRecipes",
+"essflowRecipes",
 JSON.stringify(recipes)
 );
 
@@ -6169,7 +6195,7 @@ recipes[index].favorite =
 
 
 localStorage.setItem(
-"foodflowRecipes",
+"essflowRecipes",
 JSON.stringify(recipes)
 );
 
@@ -6512,7 +6538,7 @@ let categoryOrder = loadCategoryOrder();
 
 function loadCategoryOrder(){
 
-    let saved = localStorage.getItem("foodflowCategoryOrder");
+    let saved = localStorage.getItem("essflowCategoryOrder");
 
     if(!saved) return [...defaultCategoryOrder];
 
@@ -6538,7 +6564,7 @@ function loadCategoryOrder(){
 function saveCategoryOrder(){
 
     localStorage.setItem(
-        "foodflowCategoryOrder",
+        "essflowCategoryOrder",
         JSON.stringify(categoryOrder)
     );
 
@@ -6708,7 +6734,7 @@ function loadCustomIngredientTranslations(){
 
     try{
 
-        let saved = localStorage.getItem("foodflowCustomIngredientTranslations");
+        let saved = localStorage.getItem("essflowCustomIngredientTranslations");
 
         return saved ? JSON.parse(saved) : {};
 
@@ -6723,7 +6749,7 @@ function loadCustomIngredientTranslations(){
 function saveCustomIngredientTranslations(){
 
     localStorage.setItem(
-        "foodflowCustomIngredientTranslations",
+        "essflowCustomIngredientTranslations",
         JSON.stringify(customIngredientTranslations)
     );
 
@@ -8370,7 +8396,7 @@ function parsePastedRecipe(){
 function showPage(page){
 
 localStorage.setItem(
-"foodflowPage",
+"essflowPage",
 page
 );    
 
@@ -8465,7 +8491,7 @@ setupPWAManifest();
 
 
 let savedPage =
-localStorage.getItem("foodflowPage")
+localStorage.getItem("essflowPage")
 || "planner";
 
 
